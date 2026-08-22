@@ -1,0 +1,23 @@
+# Build, QA and asset-production working directory. Contains the raw and rejected
+# video renders, extracted seam frames, restoration intermediates and QA screenshots
+# — 193 MB of material that nothing on the live site loads.
+work/
+
+# Internal production notes and the generation prompts for the footage.
+HANDOFF.md
+prompts/
+
+# Playwright etc. — the QA harness lives in work/ and installs its own deps.
+node_modules/
+package-lock.json
+
+# OS / editor cruft
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+._*
+.vscode/
+.idea/
+*.swp
