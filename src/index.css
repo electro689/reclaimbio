@@ -1,0 +1,231 @@
+@import 'tailwindcss';
+
+/* ============================================================
+   RECLAIMBIO — DESIGN SYSTEM
+   Cinematic · Dark · Highly Technical
+   ============================================================ */
+
+@theme {
+  /* ---- Core palette ---- */
+  --color-void: #090a0f;
+  --color-void-lift: #0e1017;
+  --color-void-deep: #05060a;
+
+  /* Waste / enzymes — toxic neon green */
+  --color-toxic: #39ff14;
+  --color-toxic-dim: #2bc70f;
+
+  /* Reclaimed material — pure bioluminescent cyan */
+  --color-biolum: #00f0ff;
+  --color-biolum-dim: #00b3bf;
+
+  /* ---- Neutral ramp (cool-shifted for the void) ---- */
+  --color-ash-100: #f2f4f8;
+  --color-ash-300: #b8bfcc;
+  --color-ash-500: #7b8494;
+  --color-ash-700: #3d4452;
+  --color-ash-900: #1a1d26;
+
+  /* ---- Typography ---- */
+  --font-display: 'Syncopate', 'Arial Black', sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+
+  /* ---- Motion ---- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quint: cubic-bezier(0.83, 0, 0.17, 1);
+
+  /* ---- Z-index scale ---- */
+  --z-scene: -10;
+  --z-content: 10;
+  --z-nav: 50;
+  --z-grain: 80;
+  --z-cursor: 100;
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    /* Lenis drives scroll in JS; keep native smooth-scroll out of the way. */
+    scroll-behavior: auto;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    background-color: var(--color-void);
+    color: var(--color-ash-300);
+    font-family: var(--font-body);
+    font-weight: 300;
+    line-height: 1.7;
+    letter-spacing: 0.01em;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+  }
+
+  /* Headings: brutalist, tight, uppercase by default */
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-ash-100);
+    text-transform: uppercase;
+    line-height: 0.9;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  /* Selection inherits the brand cyan */
+  ::selection {
+    background-color: var(--color-biolum);
+    color: var(--color-void);
+  }
+
+  /* Hide the native cursor ONLY where we render a custom one:
+     fine-pointer devices. Touch + coarse pointers keep native behaviour. */
+  @media (hover: hover) and (pointer: fine) {
+    body.has-custom-cursor,
+    body.has-custom-cursor * {
+      cursor: none;
+    }
+  }
+
+  /* Visible focus ring for keyboard users — never removed, only restyled. */
+  :focus-visible {
+    outline: 2px solid var(--color-biolum);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* Thin technical scrollbar (progressive enhancement) */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--color-void-deep);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ash-900);
+    border-radius: 99px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-ash-700);
+  }
+}
+
+/* ============================================================
+   UTILITIES — glassmorphism, glow, technical detail
+   ============================================================ */
+
+/* Heavy glass panel: the signature surface of the site. */
+@utility glass {
+  background-color: color-mix(in oklab, var(--color-ash-100) 4%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--color-ash-100) 10%, transparent);
+}
+
+/* Lighter glass for nav / floating chrome. */
+@utility glass-thin {
+  background-color: color-mix(in oklab, var(--color-void) 55%, transparent);
+  backdrop-filter: blur(14px) saturate(130%);
+  -webkit-backdrop-filter: blur(14px) saturate(130%);
+  border-bottom: 1px solid color-mix(in oklab, var(--color-ash-100) 8%, transparent);
+}
+
+/* 1px hairline — the "technical" tell. */
+@utility hairline {
+  border: 1px solid color-mix(in oklab, var(--color-ash-100) 10%, transparent);
+}
+
+/* Text glow, brand-tinted via currentColor. */
+@utility text-glow {
+  text-shadow:
+    0 0 12px color-mix(in oklab, currentColor 55%, transparent),
+    0 0 48px color-mix(in oklab, currentColor 25%, transparent);
+}
+
+@utility glow-toxic {
+  box-shadow:
+    0 0 24px -4px color-mix(in oklab, var(--color-toxic) 45%, transparent),
+    0 0 80px -20px color-mix(in oklab, var(--color-toxic) 30%, transparent);
+}
+
+@utility glow-biolum {
+  box-shadow:
+    0 0 24px -4px color-mix(in oklab, var(--color-biolum) 50%, transparent),
+    0 0 80px -20px color-mix(in oklab, var(--color-biolum) 32%, transparent);
+}
+
+/* Monospaced technical label — section eyebrows, data readouts. */
+@utility label-tech {
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--color-ash-500);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Display headline: maximally tight tracking per the brief. */
+@utility display-tight {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  line-height: 0.82;
+  letter-spacing: -0.045em;
+}
+
+/* Relaxed body measure for long-form copy. */
+@utility body-relaxed {
+  line-height: 1.8;
+  letter-spacing: 0.005em;
+  max-width: 46ch;
+}
+
+/* ============================================================
+   TOUCH DEVICES — cheaper glass over the animated canvas
+   Backdrop-blur forces the compositor to re-sample the fullscreen WebGL
+   layer every frame, which is the top DOM-side cost on phones. Halving the
+   radius on coarse pointers keeps the frosted look while roughly halving
+   that sampling cost. Desktop is untouched.
+   ============================================================ */
+
+@media (hover: none) and (pointer: coarse) {
+  .glass {
+    backdrop-filter: blur(10px) saturate(130%);
+    -webkit-backdrop-filter: blur(10px) saturate(130%);
+  }
+  .glass-thin {
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+  }
+}
+
+/* ============================================================
+   REDUCED MOTION — global safeguard
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
