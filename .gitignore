@@ -1,24 +1,23 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# Build, QA and asset-production working directory. Contains the raw and rejected
+# video renders, extracted seam frames, restoration intermediates and QA screenshots
+# — 193 MB of material that nothing on the live site loads.
+work/
 
-node_modules
-dist
-dist-ssr
-*.local
+# Internal production notes and the generation prompts for the footage.
+HANDOFF.md
+prompts/
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Playwright etc. — the QA harness lives in work/ and installs its own deps.
+node_modules/
+package-lock.json
+
+# OS / editor cruft
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+._*
+.vscode/
+.idea/
+*.swp

@@ -1,24 +1,518 @@
 <!doctype html>
-<html lang="en" class="scroll-smooth">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#090A0F" />
-    <meta
-      name="description"
-      content="ReclaimBio — engineered enzymes that convert industrial waste into biodegradable polymers. Waste is a design flaw."
-    />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Inter:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <title>ReclaimBio — Waste is a Design Flaw</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ReclaimBio — Unclaimed Biomass Unlocked with Biology</title>
+<meta name="description" content="ReclaimBio is an R&amp;D-stage biotechnology company engineering microbes to turn unclaimed agricultural biomass into fermentation-based biosurfactants for home and personal care.">
+<meta name="theme-color" content="#05100D">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="ReclaimBio — Unclaimed Biomass Unlocked with Biology">
+<meta property="og:description" content="Fermentation-based alternatives to petrochemical surfactants, grown from agricultural residue.">
+<meta property="og:image" content="assets/logo-lockup.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
+
+<!-- Leg 1's poster is the only image on screen before any clip decodes. Preload the
+     breakpoint's own copy; the engine picks the same file at mount (scrub-engine.js:142). -->
+<link rel="preload" as="image" href="assets/biomass.webp" media="(min-width:861px)">
+<link rel="preload" as="image" href="assets/biomass-m.webp" media="(max-width:860px)">
+
+<style>
+/* ---------------------------------------------------------------------------
+   Page theme. Deliberately UNLAYERED: the engine ships its defaults inside
+   `@layer sw {…}`, so every rule here wins regardless of injection order.
+   That is the supported way to re-theme it — see scrub-engine.js injectCSS().
+   --------------------------------------------------------------------------- */
+:root,
+.sw-root{
+  --sw-bg:#05100D;               /* near-black with a teal cast — full-bleed footage sits on it */
+  --sw-ink:#EDF3EF;
+  --sw-ink-soft:#AFC2B8;         /* measured up from #8CA39A: the nav pill and the scroll hint
+                                    sit on unscrimmed footage that peaks at 130–144 luma */
+  --sw-accent:#62A810;           /* overridden per section by the engine (inline style) */
+  --sw-font-display:"Inter Tight","Inter","Segoe UI",system-ui,sans-serif;
+  --sw-font-body:"Inter","Segoe UI",Roboto,system-ui,sans-serif;
+  --rb-on-accent:#04100C;        /* text colour that sits ON an accent fill */
+  --rb-bed:#030B08;              /* the copy's local ink bed — a shade under --sw-bg so it
+                                    reads as depth behind the type, not as a flat panel */
+}
+html{background:#05100D;}
+body{background:#05100D;-webkit-font-smoothing:antialiased;}
+
+/* -- Dark-theme corrections -------------------------------------------------
+   These five engine defaults hard-code #fff, which inverts badly once --sw-ink
+   is light: white-on-light buttons, white glass panels over dark footage. -- */
+.sw-btn--primary{color:var(--rb-on-accent);background:var(--sw-accent);}
+.sw-btn--ghost{color:var(--sw-ink);border-color:rgba(237,243,239,.26);}
+.sw-topcta{color:var(--rb-on-accent);background:var(--sw-accent);}
+.sw-nav{background:rgba(237,243,239,.06);border-color:rgba(237,243,239,.11);}
+.sw-nav__item.is-active{color:var(--rb-on-accent);background:var(--sw-accent);}
+/* Tag pills: the engine mixes the accent toward #000 and #fff, which is white-on-light
+   here. Lift the label off the raw accent too — #22A06B and #C9862B at 13px need a
+   near-black backdrop to clear 4.5:1, and the pills sit at the copy's soft right end. */
+.sw-copy__tags li{
+  color:color-mix(in srgb,var(--sw-accent) 62%,var(--sw-ink));
+  background:color-mix(in srgb,var(--sw-accent) 13%,transparent);
+  border-color:color-mix(in srgb,var(--sw-accent) 36%,transparent);
+}
+.sw-route__label{color:var(--sw-ink);background:rgba(5,16,13,.74);border-color:rgba(237,243,239,.12);}
+
+/* Brand mark: swap the engine's gradient chip for the real logo icon. */
+.sw-brand__mark{
+  width:32px;height:32px;border-radius:0;box-shadow:none;
+  background:url("assets/logo-mark.png") center/contain no-repeat;
+}
+.sw-brand__name{letter-spacing:-.01em;}
+
+/* Keep the topbar readable over bright frames without a solid bar. The top 9% of the
+   footage measures 52–115 mean and peaks at 144 (ferment), so the brand and nav sit at
+   ~49 composited luma — 5.9:1 for the inactive nav item, 10:1 for the brand. */
+.sw-topbar::before{
+  content:"";position:absolute;inset:0 0 auto 0;height:260%;z-index:-1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(5,16,13,.90) 0%,rgba(5,16,13,.52) 44%,transparent 100%);
+}
+
+/* -- Copy legibility, tuned against the delivered footage ---------------------
+   Measured copy-zone luma (mean/max over every frame of all twelve clips):
+     desktop  biomass 74/81  strain 51/62  ferment 74/102
+              purify 106/116  formulate 86/100  product 88/94
+     mobile   biomass 83/113  strain 90/115  ferment 55/80
+              purify 68/82  formulate 83/101  product 78/110
+   The old single gradient was built for near-black rooms. To reach 4.5:1 for a 13px
+   accent eyebrow on a 116-luma wall it would have had to be near-opaque across the
+   whole copy column — which walls off the left third of the shot.
+
+   So the darkening is split in two:
+     1. a WIDE, SOFT wash for tonal grounding, weaker than before, and
+     2. a LOCAL ink bed on the copy itself.
+   The bed is a child of .sw-copy, so it inherits the opacity the engine animates
+   every frame (scrub-engine.js:253) — it arrives and leaves with the words, and
+   between sections the footage is completely unobstructed. Nothing to schedule.
+   --------------------------------------------------------------------------- */
+.sw-copylayer::before{
+  width:min(64vw,900px);
+  background:linear-gradient(90deg,
+    color-mix(in srgb,var(--sw-bg) 84%,transparent) 0%,
+    color-mix(in srgb,var(--sw-bg) 58%,transparent) 34%,
+    color-mix(in srgb,var(--sw-bg) 20%,transparent) 68%,
+    transparent 100%);
+}
+.sw-copy::before{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  left:-8vw;right:-16%;top:-56px;bottom:-64px;
+  background:radial-gradient(120% 92% at 22% 50%,
+    color-mix(in srgb,var(--rb-bed) 92%,transparent) 0%,
+    color-mix(in srgb,var(--rb-bed) 74%,transparent) 42%,
+    color-mix(in srgb,var(--rb-bed) 34%,transparent) 72%,
+    transparent 100%);
+}
+/* The engine's own mobile scrim lives inside @layer sw, so the unlayered rules
+   above would beat it even on phones. Restate the bottom-anchored versions. */
+@media (max-width:860px){
+  .sw-copylayer::before{
+    width:100%;height:72%;top:auto;bottom:0;
+    background:linear-gradient(0deg,
+      color-mix(in srgb,var(--sw-bg) 92%,transparent) 4%,
+      color-mix(in srgb,var(--sw-bg) 70%,transparent) 30%,
+      color-mix(in srgb,var(--sw-bg) 26%,transparent) 62%,
+      transparent 100%);
+  }
+  /* Full-bleed column, so the bed goes elliptical-vertical and is weighted low —
+     the eyebrow at the top of the block is the pixel that has to clear 4.5:1. */
+  .sw-copy::before{
+    left:-6vw;right:-6vw;top:-44px;bottom:-56px;
+    background:radial-gradient(130% 118% at 50% 66%,
+      color-mix(in srgb,var(--rb-bed) 96%,transparent) 0%,
+      color-mix(in srgb,var(--rb-bed) 80%,transparent) 44%,
+      color-mix(in srgb,var(--rb-bed) 30%,transparent) 76%,
+      transparent 100%);
+  }
+}
+
+/* The scroll hint sits dead centre at the bottom with no scrim at all, over the
+   brightest strip in the whole build — leg 1's floor runs 106 mean / 130 max. */
+.sw-hint::before{
+  content:"";position:absolute;z-index:-1;pointer-events:none;
+  left:-190%;right:-190%;top:-60%;bottom:-120%;
+  background:radial-gradient(60% 62% at 50% 50%,
+    color-mix(in srgb,var(--rb-bed) 80%,transparent) 0%,
+    color-mix(in srgb,var(--rb-bed) 44%,transparent) 52%,
+    transparent 100%);
+}
+
+/* A quiet vignette so the centred focal subject holds the eye. */
+.sw-stage::after{
+  content:"";position:absolute;inset:0;pointer-events:none;z-index:5;
+  background:radial-gradient(78% 68% at 50% 46%,transparent 42%,rgba(3,9,7,.46) 100%);
+}
+
+/* atmosphere:false drops the gradient + glow but the engine still seeds 20 animated
+   particles. They sit at z-index 0, permanently behind full-bleed footage — invisible
+   and pure compositor cost on phones. */
+.sw-particles{display:none;}
+
+.sw-copy__title{text-wrap:balance;}
+
+/* Restore vertical centring. The engine centres the copy with
+   `top:50%; transform:translateY(-50%)` (scrub-engine.js:389) but then overwrites
+   that same property with its parallax drift on every frame (:254) — so the -50%
+   never survives and the block hangs *downward* from the midline. At 1440x900 the
+   tallest blocks then run to 102% of the viewport and lose their tag pills and CTA
+   buttons off the bottom edge.
+   `translate` is an independent transform property, applied before `transform` and
+   untouched by the engine's inline write, so the two compose instead of fighting. */
+.sw-copy{translate:0 -50%;}
+@media (max-width:860px){ .sw-copy{translate:0 0;} }   /* bottom-anchored on phones */
+
+/* Eyebrow: 82% accent + 18% ink. The raw accents #22A06B (relative luminance .266)
+   and #C9862B (.296) need a ≤39-luma backdrop to clear 4.5:1 at 12.8px; the bed
+   delivers ~36, so the mix is what buys the margin — 5.7:1 with the hue intact.
+   width:max-content keeps display:block (so it stays off the section-number line)
+   while shrinking the box to the text, which is what the rule below measures. */
+.sw-copy__eyebrow{
+  letter-spacing:.2em;
+  color:color-mix(in srgb,var(--sw-accent) 82%,var(--sw-ink));
+  position:relative;width:max-content;max-width:100%;
+}
+.sw-copy__eyebrow::after{
+  content:"";position:absolute;left:0;right:0;bottom:-7px;height:1px;
+  background:currentColor;opacity:.5;
+  transform:scaleX(var(--rb-rule,1));transform-origin:0 50%;
+}
+
+/* -- Heading motion ----------------------------------------------------------
+   scrub-engine.js:253-254 rewrites .sw-copy's own opacity AND transform every
+   frame, so nothing can be animated on that element — it would be clobbered on
+   the next tick. Instead a rAF loop mirrors the engine's computed opacity onto
+   --rb-p (script at the foot of the page) and each child derives its own local
+   progress from it here. No segment math is duplicated, and because the source
+   IS the engine's own value the motion cannot desync from the scrub.
+
+   Every var() carries a fallback of 1 — if the script never runs, the page
+   renders as fully-revealed static type rather than invisible text.
+
+   Deliberately no filter:blur() anywhere. Six <video> elements are already being
+   seeked; a blurred text layer over them forces a full-frame GPU readback per
+   frame. Reveal is opacity + translate + an overflow mask, all compositor-only.
+   -------------------------------------------------------------------------- */
+.rb-w{
+  display:inline-block;overflow:hidden;vertical-align:bottom;
+  padding:.12em 0 .14em;margin:-.12em 0 -.14em;   /* mask room for ascenders/descenders,
+                                                     negated so line spacing is unchanged */
+}
+.rb-w>i{
+  --rb-l:clamp(0,calc((var(--rb-p,1) - var(--rb-i,0) * .045) / .34),1);
+  display:inline-block;font-style:inherit;line-height:1;
+  opacity:var(--rb-l);
+  transform:translateY(calc((1 - var(--rb-l)) * 1.25em));
+}
+/* The pivot word — the verb the sentence turns on — carries the section accent.
+   At clamp(2rem,4.4vw,3.5rem)/700 this is large text, so 3:1 applies and there is
+   room to keep the accent nearly raw. */
+.rb-w--pivot>i{color:color-mix(in srgb,var(--sw-accent) 76%,var(--sw-ink));}
+
+.sw-copy__num{opacity:clamp(0,calc(var(--rb-p,1) / .16),1);}
+.sw-copy__eyebrow{
+  --rb-e:clamp(0,calc((var(--rb-p,1) - .04) / .26),1);
+  --rb-rule:clamp(0,calc((var(--rb-p,1) - .12) / .34),1);
+  opacity:var(--rb-e);
+}
+.sw-copy__body{
+  --rb-b:clamp(0,calc((var(--rb-p,1) - .30) / .34),1);
+  opacity:var(--rb-b);transform:translateY(calc((1 - var(--rb-b)) * 13px));
+}
+.sw-copy__tags li{
+  --rb-t:clamp(0,calc((var(--rb-p,1) - .40 - var(--rb-i,0) * .05) / .30),1);
+  opacity:var(--rb-t);transform:translateY(calc((1 - var(--rb-t)) * 9px));
+}
+.sw-copy__cta{
+  --rb-c:clamp(0,calc((var(--rb-p,1) - .46) / .32),1);
+  opacity:var(--rb-c);transform:translateY(calc((1 - var(--rb-c)) * 12px));
+}
+
+/* Section 1 is the landing view: the engine hands it --rb-p:1 on the very first
+   frame, so the scroll-driven reveal above has nothing to play. These run once on
+   load instead. fill-mode:backwards holds the 0% keyframe through the delay, and
+   with no forwards fill each element releases to the declared (fully revealed)
+   value the moment it finishes — so scrolling back to the top later shows plain
+   static type, never a replay. First word is legible at ~400ms. */
+@keyframes rb-word{from{opacity:0;transform:translateY(1.25em);}to{opacity:1;transform:translateY(0);}}
+@keyframes rb-rise{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+@keyframes rb-rule{from{transform:scaleX(0);}to{transform:scaleX(1);}}
+.rb-intro .rb-w>i{
+  animation:rb-word .82s cubic-bezier(.22,.68,.16,1) backwards;
+  animation-delay:calc(160ms + var(--rb-i,0) * 58ms);
+}
+.rb-intro .sw-copy__num{animation:rb-rise .7s cubic-bezier(.22,.68,.16,1) 60ms backwards;}
+.rb-intro .sw-copy__eyebrow{animation:rb-rise .7s cubic-bezier(.22,.68,.16,1) 110ms backwards;}
+.rb-intro .sw-copy__eyebrow::after{animation:rb-rule .9s cubic-bezier(.22,.68,.16,1) 420ms backwards;}
+.rb-intro .sw-copy__body{animation:rb-rise .8s cubic-bezier(.22,.68,.16,1) 620ms backwards;}
+.rb-intro .sw-copy__tags li{
+  animation:rb-rise .7s cubic-bezier(.22,.68,.16,1) backwards;
+  animation-delay:calc(760ms + var(--rb-i,0) * 80ms);
+}
+
+/* Hard accessibility override: no reveal, no stagger, no wipe. */
+@media (prefers-reduced-motion:reduce){
+  .rb-w>i,.sw-copy__num,.sw-copy__eyebrow,.sw-copy__body,
+  .sw-copy__tags li,.sw-copy__cta{
+    opacity:1!important;transform:none!important;animation:none!important;
+  }
+  .sw-copy__eyebrow::after{transform:none!important;animation:none!important;}
+}
+
+/* Phones: keep the hint on one line and lift the copy clear of it, otherwise a
+   wrapped hint climbs into the tag pills on the first screen. */
+@media (max-width:860px){
+  .sw-hint{white-space:nowrap;}
+  .sw-copy{bottom:calc(clamp(74px,15dvh,124px) + env(safe-area-inset-bottom));}
+}
+
+/* -- Section 6 on phones ------------------------------------------------------
+   The hero bottle occupies 31–60% of legm 6's frame height and its base
+   arrangement sits at the plinth top (~55–62%); the last copy block is the
+   tallest in the build (it carries the CTA pair) and lands at ~31% — burying the
+   product under its own caption. object-position cannot help: at phone aspect
+   ratios the 9:16 clip is cropped horizontally, so vertical framing is a no-op.
+
+   Fix is two-sided. Push the footage up and in — .sw-scene already has
+   overflow:hidden (scrub-engine.js:384) so the scale is clipped to the stage, and
+   the engine only ever writes an inline transform to the *still*, never the video
+   (:240), so this is safe — which maps the bottle to 17–54%. Then tighten the
+   block so its top lands at ~62%. The tag reads 'R&D stage', which the body
+   already states outright, so it is the one element that can go.
+   -------------------------------------------------------------------------- */
+@media (max-width:860px){
+  .sw-scene:last-child .sw-scene__video{transform:translateY(-9%) scale(1.26);}
+  .sw-copy:last-child{bottom:calc(clamp(30px,7dvh,64px) + env(safe-area-inset-bottom));}
+  .sw-copy:last-child .sw-copy__title{font-size:clamp(1.7rem,6.6vw,2.3rem);}
+  .sw-copy:last-child .sw-copy__body{font-size:clamp(.92rem,3.3vw,1rem);margin-top:12px;}
+  .sw-copy:last-child .sw-copy__tags{display:none;}
+  .sw-copy:last-child .sw-copy__cta{margin-top:18px;}
+}
+/* -- No-JS fallback ----------------------------------------------------------
+   The engine builds every node from the config object, so with scripting off
+   `#app` stays empty and the page renders blank. These rules only ever apply to
+   <noscript> content, which the parser drops entirely when JS is enabled. */
+.rb-ns{max-width:64ch;margin:0 auto;padding:clamp(28px,7vw,72px) clamp(20px,5vw,32px);
+  color:var(--sw-ink);font-family:var(--sw-font-body);line-height:1.6;}
+.rb-ns h1{font-family:var(--sw-font-display);font-weight:700;letter-spacing:-.02em;
+  font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.1;margin:0 0 .5em;}
+.rb-ns h2{font-family:var(--sw-font-display);font-weight:600;letter-spacing:-.01em;
+  font-size:clamp(1.15rem,3vw,1.4rem);line-height:1.25;margin:2em 0 .35em;}
+.rb-ns p{margin:0 0 1em;color:color-mix(in srgb,var(--sw-ink) 88%,var(--sw-bg));}
+.rb-ns em{display:block;font-style:normal;font-size:.78rem;letter-spacing:.18em;
+  text-transform:uppercase;color:#8FD14F;margin-bottom:.4em;}
+.rb-ns a{color:#8FD14F;}
+.rb-ns hr{border:0;border-top:1px solid rgba(237,243,239,.14);margin:2.5em 0 0;}
+</style>
+</head>
+<body>
+
+<noscript>
+  <div class="rb-ns">
+    <h1>ReclaimBio — Unclaimed Biomass, Unlocked with Biology</h1>
+    <p>This page is a scroll-driven film. It needs JavaScript to play. Here is the same
+      story as plain text.</p>
+    <hr>
+    <h2><em>Unclaimed feedstock</em>Unclaimed Biomass, Unlocked with Biology</h2>
+    <p>We start with the residue nobody counts as a resource — wheat straw, corn stover,
+      spent brewers&rsquo; grain.</p>
+    <h2><em>Synthetic biology</em>Microbes Engineered to Eat the Leftovers</h2>
+    <p>Genetic engineering gives our strains an appetite for crude biomass and a habit of
+      secreting surfactant.</p>
+    <h2><em>Bench to pilot</em>Grown, Not Refined from Oil</h2>
+    <p>The molecule is produced by fermentation — five litres of glass today, twenty litres
+      of steel next.</p>
+    <h2><em>Downstream</em>Separating Product from Broth</h2>
+    <p>Chromatography, centrifugation and evaporation take a living culture down to purified
+      biosurfactant.</p>
+    <h2><em>Performance</em>Foam, Wetting, Cleaning Power</h2>
+    <p>Every batch is tested the way a formulator would actually use it, against the
+      petrochemical it replaces.</p>
+    <h2><em>Where this goes</em>A Surfactant Without the Petrochemical</h2>
+    <p>We are pre-revenue and honest about it: this is what we are building toward, and we
+      are looking for the partners to get there.
+      <a href="#contact">Start a conversation</a>.</p>
+  </div>
+</noscript>
+
+<main id="app"></main>
+
+<script src="scrub-engine.js"></script>
+<script>
+/* Architecture A — one continuous forward take.
+   The six clips ARE the six legs of a single camera move, each rendered from the
+   previous leg's real last frame, so there is nothing to fly between:
+   `connectors: []` and a hair of crossfade to hide the compression seam only.
+
+   `scroll` values are retuned to the DELIVERED durations. The engine normalises
+   scroll→time per clip (s.video.duration), so a short clip covering a long scroll
+   allocation plays back slower — the camera visibly changes pace at that seam.
+   There is one `scroll` per section and it serves BOTH chains, so each factor is
+   taken from the mean of the pair, against the 5.042 s legs 1–2 set the pace at:
+
+     §    desktop  mobile   mean    factor   was  →  now
+     1      5.042   5.042   5.042   1.000    1.8 →  1.8
+     2      5.042   5.042   5.042   1.000    1.8 →  1.8
+     3      4.208   5.042   4.625   0.917    2.0 →  1.85
+     4      4.000   4.417   4.208   0.835    1.9 →  1.6
+     5      4.000   4.208   4.104   0.814    1.8 →  1.45
+     6      4.000   5.042   4.521   0.897    2.2 →  2.0                        */
+mountLetsScroll(document.getElementById('app'), {
+  brand: { name: 'ReclaimBio', href: '#' },
+  cta:   { label: 'Get in touch', href: 'mailto:hello@reclaimbio.com' },
+  hint:  'scroll',
+
+  atmosphere: false,   // full-bleed footage covers the sky layer completely
+  connectors: [],      // architecture A has none
+  connectorsMobile: [],
+  crossfade: 0.08,
+
+  sections: [
+    {
+      id: 'biomass', label: 'Biomass', accent: '#7CB518',
+      still: 'assets/biomass.webp',   stillMobile: 'assets/biomass-m.webp',
+      clip:  'assets/vid/biomass.mp4', clipMobile: 'assets/vid/biomass-m.mp4',
+      scroll: 1.8, linger: 0.30,
+      eyebrow: 'Unclaimed feedstock',
+      title: 'Unclaimed Biomass, Unlocked with Biology',
+      body: 'We start with the residue nobody counts as a resource — wheat straw, corn stover, spent brewers\u2019 grain.',
+      tags: ['Agricultural residue', 'No food competition']
+    },
+    {
+      id: 'strain', label: 'Strains', accent: '#22A06B',
+      still: 'assets/strain.webp',   stillMobile: 'assets/strain-m.webp',
+      clip:  'assets/vid/strain.mp4', clipMobile: 'assets/vid/strain-m.mp4',
+      scroll: 1.8, linger: 0.32,
+      eyebrow: 'Synthetic biology',
+      title: 'Microbes Engineered to Eat the Leftovers',
+      body: 'Genetic engineering gives our strains an appetite for crude biomass and a habit of secreting surfactant.',
+      tags: ['Strain engineering', 'Pathway design', 'High-throughput screening']
+    },
+    {
+      id: 'ferment', label: 'Fermentation', accent: '#2FA6A6',
+      still: 'assets/ferment.webp',   stillMobile: 'assets/ferment-m.webp',
+      clip:  'assets/vid/ferment.mp4', clipMobile: 'assets/vid/ferment-m.mp4',
+      scroll: 1.85, linger: 0.35,
+      eyebrow: 'Bench to pilot',
+      title: 'Grown, Not Refined from Oil',
+      body: 'The molecule is produced by fermentation — five litres of glass today, twenty litres of steel next.',
+      tags: ['5 L bench', '20 L pilot']
+    },
+    {
+      id: 'purify', label: 'Recovery', accent: '#C9862B',
+      still: 'assets/purify.webp',   stillMobile: 'assets/purify-m.webp',
+      clip:  'assets/vid/purify.mp4', clipMobile: 'assets/vid/purify-m.mp4',
+      scroll: 1.6, linger: 0.34,
+      eyebrow: 'Downstream',
+      title: 'Separating Product from Broth',
+      body: 'Chromatography, centrifugation and evaporation take a living culture down to purified biosurfactant.',
+      tags: ['Chromatography', 'Purity assays']
+    },
+    {
+      id: 'formulate', label: 'Formulation', accent: '#62A810',
+      still: 'assets/formulate.webp',   stillMobile: 'assets/formulate-m.webp',
+      clip:  'assets/vid/formulate.mp4', clipMobile: 'assets/vid/formulate-m.mp4',
+      scroll: 1.45, linger: 0.32,
+      eyebrow: 'Performance',
+      title: 'Foam, Wetting, Cleaning Power',
+      body: 'Every batch is tested the way a formulator would actually use it, against the petrochemical it replaces.',
+      tags: ['Foam column', 'Surface tension', 'Home & personal care']
+    },
+    {
+      id: 'product', label: 'The goal', accent: '#8FD117',
+      still: 'assets/product.webp',   stillMobile: 'assets/product-m.webp',
+      clip:  'assets/vid/product.mp4', clipMobile: 'assets/vid/product-m.mp4',
+      scroll: 2.0, linger: 0.45,
+      eyebrow: 'Where this goes',
+      title: 'A Surfactant Without the Petrochemical',
+      body: 'We are pre-revenue and honest about it: this is what we are building toward, and we are looking for the partners to get there.',
+      tags: ['R&D stage'],
+      cta: {
+        primary:   { label: 'Start a conversation', href: 'mailto:hello@reclaimbio.com' },
+        secondary: { label: 'Back to the top',      href: '#' }
+      }
+    }
+  ]
+});
+</script>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Heading motion driver.
+
+   Two jobs, both post-mount because the engine builds the copy DOM itself:
+     1. split each title into per-word spans and index them, so CSS can stagger
+     2. mirror the engine's per-frame copy opacity onto --rb-p
+
+   Why mirror instead of computing progress independently: the engine already
+   derives a 0→1→0 "presence" curve per section from the scroll position
+   (scrub-engine.js:244-253) and writes it as an inline opacity. Reading that back
+   is one property access, cannot drift from the scrub, and needs no knowledge of
+   segment boundaries, linger remapping or crossfade. Recomputing it here would be
+   a second source of truth for the same number.
+   --------------------------------------------------------------------------- */
+(function () {
+  var copies = Array.prototype.slice.call(document.querySelectorAll('.sw-copy'));
+  if (!copies.length) return;
+
+  /* The word each sentence turns on, in section order. Matched by text so copy
+     edits that reorder a title still land on the right word; a title that no
+     longer contains its pivot simply gets no accent rather than the wrong one. */
+  var PIVOTS = ['Unlocked', 'Engineered', 'Grown', 'Separating', 'Cleaning', 'Without'];
+  var bare = function (w) { return w.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase(); };
+
+  copies.forEach(function (copy, si) {
+    var title = copy.querySelector('.sw-copy__title');
+    if (title) {
+      var words = title.textContent.split(/\s+/).filter(Boolean);
+      var pivot = bare(PIVOTS[si] || '');
+      title.textContent = '';
+      words.forEach(function (w, wi) {
+        var mask = document.createElement('span');
+        mask.className = 'rb-w' + (pivot && bare(w) === pivot ? ' rb-w--pivot' : '');
+        mask.style.setProperty('--rb-i', wi);
+        var inner = document.createElement('i');
+        inner.textContent = w;
+        mask.appendChild(inner);
+        title.appendChild(mask);
+        // A real space between the inline-blocks, so the h2's text content is
+        // unchanged for screen readers, selection and copy/paste.
+        if (wi < words.length - 1) title.appendChild(document.createTextNode(' '));
+      });
+    }
+    copy.querySelectorAll('.sw-copy__tags li').forEach(function (li, i) {
+      li.style.setProperty('--rb-i', i);
+    });
+  });
+
+  // Section 1 is the landing view — the engine hands it opacity 1 immediately, so
+  // the scroll-driven reveal has nothing to play. Run the load-in instead.
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    copies[0].classList.add('rb-intro');
+  }
+
+  var last = copies.map(function () { return -1; });
+  (function tick() {
+    for (var i = 0; i < copies.length; i++) {
+      var p = parseFloat(copies[i].style.opacity);
+      if (!(p >= 0)) p = 0;
+      // Only write on a real change: a custom property write invalidates the
+      // whole subtree's style, and at most two copies are ever moving at once.
+      if (Math.abs(p - last[i]) > 0.004) {
+        last[i] = p;
+        copies[i].style.setProperty('--rb-p', p.toFixed(3));
+      }
+    }
+    requestAnimationFrame(tick);
+  })();
+})();
+</script>
+</body>
 </html>
