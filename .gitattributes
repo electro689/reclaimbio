@@ -1,0 +1,8 @@
+# Never let end-of-line normalisation touch the footage or the posters.
+*.mp4 binary
+*.webp binary
+*.png binary
+
+*.html text eol=lf
+*.js   text eol=lf
+*.md   text eol=lf
