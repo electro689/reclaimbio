@@ -499,16 +499,31 @@ mountLetsScroll(document.getElementById('app'), {
   }
 
   var last = copies.map(function () { return -1; });
+  // Sleep the mirror when the page is still: the engine only rewrites copy
+  // opacity from scroll/layout passes, so after ~1s with no writes and no
+  // scroll/resize/load activity there is nothing left to mirror. Identical
+  // values, just no per-frame polling while idle — phones stay cool.
+  var tickIdle = 0;
+  function wakeTick() { tickIdle = 0; }
+  window.addEventListener('scroll', wakeTick, { passive: true });
+  window.addEventListener('resize', wakeTick);
+  window.addEventListener('orientationchange', wakeTick);
+  window.addEventListener('load', wakeTick);
   (function tick() {
-    for (var i = 0; i < copies.length; i++) {
-      var p = parseFloat(copies[i].style.opacity);
-      if (!(p >= 0)) p = 0;
-      // Only write on a real change: a custom property write invalidates the
-      // whole subtree's style, and at most two copies are ever moving at once.
-      if (Math.abs(p - last[i]) > 0.004) {
-        last[i] = p;
-        copies[i].style.setProperty('--rb-p', p.toFixed(3));
+    if (tickIdle < 60) {
+      var wrote = false;
+      for (var i = 0; i < copies.length; i++) {
+        var p = parseFloat(copies[i].style.opacity);
+        if (!(p >= 0)) p = 0;
+        // Only write on a real change: a custom property write invalidates the
+        // whole subtree's style, and at most two copies are ever moving at once.
+        if (Math.abs(p - last[i]) > 0.004) {
+          last[i] = p;
+          copies[i].style.setProperty('--rb-p', p.toFixed(3));
+          wrote = true;
+        }
       }
+      tickIdle = wrote ? 0 : tickIdle + 1;
     }
     requestAnimationFrame(tick);
   })();

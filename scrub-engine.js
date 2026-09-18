@@ -178,6 +178,13 @@ function mountLetsScroll(container, config) {
   const lingerEase = (x, L) => { L = clamp(L); const c = x - 0.5; return (1 - L) * x + L * (4 * c * c * c + 0.5); };
   let vh = window.innerHeight, stageX = 0, totalW = 0, activeIndex = -1, ticking = false;
   let laidOutW = window.innerWidth;   // width the current layout was computed at (see onResize)
+  // Last-written style values (see read): scroll fires continuously through a
+  // flick, but most layers sit at constant values the whole time — rewriting them
+  // every tick forces redundant style recalc, the dominant DOM-side jank,
+  // especially on phones. Behaviour is unchanged: identical values reach the DOM.
+  let _sb = -1, _hint = -1, _py = NaN;
+  // Seek-loop sleep state (see raf/wakeSeeks).
+  let seeksAwake = true, seekIdle = 0;
 
   function layout() {
     vh = window.innerHeight;
@@ -220,6 +227,7 @@ function mountLetsScroll(container, config) {
   }
 
   function read() {
+    wakeSeeks();   // targets may have moved — make sure the seek loop is running
     const y = window.scrollY || window.pageYOffset;
     const fade = CROSSFADE * vh;
     let ci = 0;
@@ -233,11 +241,13 @@ function mountLetsScroll(container, config) {
       let outside = 0;
       if (y < s.start) outside = s.start - y; else if (y > s.end) outside = y - s.end;
       const op = smooth(1 - outside / fade);
-      s.el.style.opacity = op; s.visible = op > 0.001;
-      s.el.style.zIndex = (i === ci) ? '120' : String(100 + Math.round(op * 10));
+      if (op !== s._op) { s._op = op; s.el.style.opacity = op; s.visible = op > 0.001; }
+      const z = (i === ci) ? '120' : String(100 + Math.round(op * 10));
+      if (z !== s._z) { s._z = z; s.el.style.zIndex = z; }
       if (!s.hasClip || !s.ready) {
         const sc = reduce ? 1 : 1.03 + local * 0.14;
-        s.img.style.transform = `translateX(${stageX - 2}vw) scale(${sc.toFixed(3)})`;
+        const t = `translateX(${stageX - 2}vw) scale(${sc.toFixed(3)})`;
+        if (t !== s._imgT) { s._imgT = t; s.img.style.transform = t; }
       }
     }
 
@@ -250,9 +260,15 @@ function mountLetsScroll(container, config) {
       else if (i === N - 1) cop = before ? 0 : smooth(pr / 0.4);       // holds CTA at the end
       else cop = (before || after) ? 0 : smooth(1 - Math.abs(pr - 0.5) / 0.5);
       const c = copies[i];
-      c.style.opacity = cop;
-      c.style.transform = reduce ? 'none' : `translateY(${(0.5 - pr) * 4}vh)`;
-      c.style.pointerEvents = cop > 0.5 ? 'auto' : 'none';
+      const tr = reduce ? 'none' : `translateY(${(0.5 - pr) * 4}vh)`;
+      const pe = cop > 0.5 ? 'auto' : 'none';
+      const st = c._st;
+      if (!st || st.op !== cop || st.tr !== tr || st.pe !== pe) {
+        c._st = { op: cop, tr: tr, pe: pe };
+        c.style.opacity = cop;
+        c.style.transform = tr;
+        c.style.pointerEvents = pe;
+      }
     }
 
     const cur = SEGMENTS[ci];
@@ -264,27 +280,43 @@ function mountLetsScroll(container, config) {
       nav.querySelectorAll('.sw-nav__item').forEach((n, k) => n.classList.toggle('is-active', k === near));
       container.style.setProperty('--sw-accent', SECTIONS[near].accent || '');
     }
-    scrollbarFill.style.transform = `scaleX(${clamp(y / (totalW * vh))})`;
-    hint.style.opacity = clamp(1 - y / (0.5 * vh));
-    if (particles) particles.style.transform = `translate3d(0, ${-y * 0.05}px, 0)`;
+    const prog = clamp(y / (totalW * vh));
+    if (prog !== _sb) { _sb = prog; scrollbarFill.style.transform = `scaleX(${prog})`; }
+    const hop = clamp(1 - y / (0.5 * vh));
+    if (hop !== _hint) { _hint = hop; hint.style.opacity = hop; }
+    if (y !== _py) { _py = y; if (particles) particles.style.transform = `translate3d(0, ${-y * 0.05}px, 0)`; }
     ticking = false;
   }
 
+  // The seek loop sleeps once every clip has settled and wakes on any scroll or
+  // layout pass (read() calls wakeSeeks first). Same seeks with the same timing
+  // while anything is moving — but a still page stops burning CPU, which keeps
+  // phones cool enough to hold frame rate once you scroll again.
+  function wakeSeeks() {
+    if (!seeksAwake) { seeksAwake = true; seekIdle = 0; requestAnimationFrame(raf); }
+  }
   function raf() {
+    if (!seeksAwake) return;
     const eps = isMobile() ? 0.02 : 0.008;   // coarser seek step on phones = fewer decodes
+    let busy = false;
     for (let i = 0; i < NSEG; i++) {
       const s = SEGMENTS[i];
       if (!s.hasClip || !s.ready || !s.video) continue;
       // Never queue a seek while the decoder is still resolving the last one.
       // On phones a fast flick would otherwise pile up seeks and freeze the clip;
       // cur keeps lerping, so we snap to the latest target the moment it's free.
-      if (s.video.seeking) continue;
+      if (s.video.seeking) { busy = true; continue; }
       if (!s.visible && Math.abs(s.cur - s.target) < 0.002) continue;
       s.cur += (s.target - s.cur) * (reduce ? 1 : 0.18);
+      if (Math.abs(s.cur - s.target) > 0.0005) busy = true;
       const dur = s.video.duration || 1;
       const t = clamp(s.cur, 0, 0.999) * dur;
-      if (Math.abs(s.video.currentTime - t) > eps) { try { s.video.currentTime = t; } catch (e) {} }
+      if (Math.abs(s.video.currentTime - t) > eps) {
+        busy = true;
+        try { s.video.currentTime = t; } catch (e) {}
+      }
     }
+    if (busy) seekIdle = 0; else if (++seekIdle > 45) { seeksAwake = false; return; }
     requestAnimationFrame(raf);
   }
 
